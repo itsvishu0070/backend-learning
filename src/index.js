@@ -2,6 +2,8 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { app } from './app.js'; // Yeh line missing hai
+
 import connectDB from "./db/index.js";
 
 
