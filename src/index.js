@@ -8,11 +8,12 @@ import connectDB from "./db/index.js";
 
 
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // Yahan tu clearly .env file ka path de raha hai
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+ dotenv.config({ path: './.env'/*path.resolve(__dirname, "../.env")*/ });
 
 console.log("MONGODB_URI:", process.env.MONGODB_URI);  // Testing line
 

@@ -1,6 +1,6 @@
 import {asynchandler} from "../utils/asynchandler.js"
 import {api_error} from "../utils/api_error.js"
-import {user} from "../models/user.model.js"
+import { user} from "../models/user.model.js"
 import {upload_on_cloudinary} from "../utils/cloudinary.js"
 import {api_response} from "../utils/api_response.js"
 
@@ -37,13 +37,15 @@ const registeruser = asynchandler(async(req,res)=>{
      throw new api_error(400,"all fields are required")
   }
 
- const existeduser = user.findOne({
+ const existeduser = await user.findOne({
     $or:[{username},{email}]
   })
   
   if(existeduser){
     throw new api_error(409,"user with email or username already exist")
   }
+
+   console.log(req.files);
 
   const avatarlocalpath = req.files?.avatar[0]?.path;
   const coverimagelocalpath = req.files?.coverimage[0]?.path;
@@ -61,7 +63,7 @@ const registeruser = asynchandler(async(req,res)=>{
 
   // if everything is correct then create a user and make entry in database 
   
- const user = await user.create({
+ const User = await user.create({
     fullname,
     avatar:avatar.url,
     coverimage:coverimage?.url || "",
@@ -72,7 +74,7 @@ const registeruser = asynchandler(async(req,res)=>{
 
   // checking wether user is created or not and removing password and refreshtoke
 
-  const createduser = await user.findById(user._id).select(
+  const createduser = await user.findById(User._id).select(
     "-password -refreshtoken"
   )
 
@@ -82,7 +84,7 @@ const registeruser = asynchandler(async(req,res)=>{
   }
 
   return res.status(201).json(
-    new api_response(200,"user registered successfully")
+    new api_response(200,createduser,"user registered successfully")
   )
 
 
