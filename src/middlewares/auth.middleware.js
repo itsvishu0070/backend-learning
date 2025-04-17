@@ -15,12 +15,17 @@ export const verifyjwt = asynchandler(async(req, res ,next)=>{
     
    const decodedtoken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
    
-   const User = await user.findById(decodedtoken?._id).select("-password - refreshtoken")
+   const User = await user.findById(decodedtoken?._id).lean()//select("-password - refreshtoken")
  
    if(!User){
      //
      throw new api_error(401,"invalid access token")
    }
+  
+// manully remove password and refreshtoken fields
+
+   delete User.password;
+   delete User.refreshtoken;
    req.User=User;
    next()
  

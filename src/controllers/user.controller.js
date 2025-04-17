@@ -3,7 +3,7 @@ import {api_error} from "../utils/api_error.js"
 import { user} from "../models/user.model.js"
 import {upload_on_cloudinary} from "../utils/cloudinary.js"
 import {api_response} from "../utils/api_response.js"
-
+import jwt from "jsonwebtoken"
 const generate_access_and_refresh_tokens=async(userId)=>{
 try {
   const User = await user.findById(userId)
@@ -116,10 +116,15 @@ const loginuser = asynchandler(async(req,res)=>{
 
         const {email,username ,password} = req.body
 
-        if(username && password){
-          throw new api_error(400,"username or password is required")
+        if(!username && !email){
+          throw new api_error(400,"username or email is required")
         }
         
+        //here is an alternative of code based on logic discusses in video:
+        //if(!(username||email)){
+        // throw new api_error(400,"username or email is  required")
+        //}
+
         const User = await user.findOne({
           $or:[{username},{email}]
         })
@@ -185,6 +190,55 @@ const loginuser = asynchandler(async(req,res)=>{
           .json(new api_response(200,{},"user logged out"))
       })
 
+const refreshaccesstoken= asynchandler( async(req,res)=>{
+  const incomingrefreshtoken =  req.cookies.
+  refreshtoken || req.body.refreshtoken
+
+  if(!incomingrefreshtoken){
+    throw new api_error(401,"unauthorized request")
+  }
+  
+ try {
+  const decodedtoken = jwt.verify(
+     incomingrefreshtoken,
+     process.env.REFRESH_TOKEN_SECRET
+   )
+ 
+  const User = await user.findById(decodedtoken?._id)
+ 
+  if(!User){
+   throw new api_error(401,"invalid refreshtoken")
+ }
+ 
+ if(incomingrefreshtoken!=User.refreshtoken){
+   throw new api_error(401,"refresh token is expired or used")
+ }
+ 
+ const options={
+   httpOnly:true,
+   secure:true
+ }
+ 
+ const {accesstoken,newrefreshtoken} = await 
+ generate_access_and_refresh_tokens(User._id)
+ 
+ return res
+ .status(200)
+ .cookie("accesstoken",accesstoken,options)
+ .cookie("refreshtoken",newrefreshtoken,options)
+ .json(
+   new api_response(
+         200,
+         {accesstoken ,  refreshtoken:newrefreshtoken},
+         "access token refreshed"
+        
+       )
+    )
+ } catch (error) {
+      throw new api_error(401,error?.message || "invalid refresh token")
+ }
+}) 
 
 
-export {registeruser,loginuser,logoutuser}
+
+export {registeruser,loginuser,logoutuser,refreshaccesstoken}
