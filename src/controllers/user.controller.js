@@ -165,9 +165,9 @@ const loginuser = asynchandler(async(req,res)=>{
       )
 
 
-      })  
+})  
       
-      const logoutuser = asynchandler(async(req,res)=>{
+const logoutuser = asynchandler(async(req,res)=>{
           await user.findByIdAndUpdate(
             req.User._id,
             {
@@ -188,7 +188,7 @@ const loginuser = asynchandler(async(req,res)=>{
           .clearCookie("accesstoken",options)
           .clearCookie("refreshtoken",options)
           .json(new api_response(200,{},"user logged out"))
-      })
+})
 
 const refreshaccesstoken= asynchandler( async(req,res)=>{
   const incomingrefreshtoken =  req.cookies.
@@ -239,6 +239,128 @@ const refreshaccesstoken= asynchandler( async(req,res)=>{
  }
 }) 
 
+const changecurrentpassword = asynchandler(async(req,res)=>{
+const {oldpassword , newpassword} = req.body 
 
+const User = await user.findById(req.User?._id)
+const isPasswordCorrect=await User.isPasswordCorrect(oldpassword)
 
-export {registeruser,loginuser,logoutuser,refreshaccesstoken}
+if(!isPasswordCorrect){
+  throw new api_error(400,"incorrect password")
+}
+
+User.password = newpassword
+await User.save({validateBeforeSave:false})
+
+return res
+.status(200)
+.json(new api_response(200,{},"password changed successfully"))
+
+}) 
+
+const getcurrentuser = asynchandler(async(req,res)=>{
+  return res
+  .status(200)
+  .json(200,req.user,"current user fetched successfully" )
+})
+
+const updateaccountdetails = asynchandler(async(req,res)=>{
+      const {fullname , email} = req.body
+      if(!(fullname || email)){
+        throw new api_error(400,"all fields are required")
+      }
+
+      const User =  user.findByIdAndUpdate(
+        req.user?._id,
+        {
+          $set:{
+            fullname,
+            email:email
+          }
+
+        },
+        {new:true}
+
+      ).select("-password")
+
+      return res
+      .status(200)
+      .json(new api_response(200,"account details updated successfully"))
+})
+
+const updateavatar = asynchandler(async(req,res)=>{
+  const avatarlocalpath= req.file?.path
+  
+  if(!avatarlocalpath){
+    throw new api_error(400,"avatar file is missing")
+  }
+  
+  const avatar = await upload_on_cloudinary
+  (avatarlocalpath)
+
+  if(!avatar.url){
+    throw new api_error(400,"error while uploading on avatar")
+  }
+
+  const User = await user.findByIdAndUpdate(
+    req.User?._id,
+    {
+      $set:{
+        avatar:avatar.url
+      }
+    },
+    {new:true}
+
+  ).select ("-password")
+
+  return res
+  .status(200)
+  .json(
+    new api_response(200,User," avatar updated successfully")
+  )
+
+})
+
+const updatecoverimage = asynchandler(async(req,res)=>{
+  const coverimagelocalpath= req.file?.path
+  
+  if(!coverimagelocalpath){
+    throw new api_error(400,"coverimage file is missing")
+  }
+  
+  const coverimage = await upload_on_cloudinary
+  (coverimagelocalpath)
+
+  if(!coverimage.url){
+    throw new api_error(400,"error while uploading on coverimage")
+  }
+
+ const User = await user.findByIdAndUpdate(
+    req.User?._id,
+    {
+      $set:{
+        coverimage:coverimage.url
+      }
+    },
+    {new:true}
+
+  ).select ("-password")
+  
+  return res
+  .status(200)
+  .json(
+    new api_response(200,User," cover image updated successfully")
+  )
+
+})
+
+export {registeruser,
+  loginuser,
+  logoutuser,
+  refreshaccesstoken,
+  changecurrentpassword,
+  getcurrentuser,
+  updateaccountdetails,
+  updateavatar,
+  updatecoverimage
+}
