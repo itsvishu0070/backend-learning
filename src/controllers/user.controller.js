@@ -261,7 +261,7 @@ return res
 const getcurrentuser = asynchandler(async(req,res)=>{
   return res
   .status(200)
-  .json(200,req.user,"current user fetched successfully" )
+  .json( new api_response(200,req.user,"current user fetched successfully" ))
 })
 
 const updateaccountdetails = asynchandler(async(req,res)=>{
@@ -270,7 +270,7 @@ const updateaccountdetails = asynchandler(async(req,res)=>{
         throw new api_error(400,"all fields are required")
       }
 
-      const User =  user.findByIdAndUpdate(
+      const User = await user.findByIdAndUpdate(
         req.user?._id,
         {
           $set:{
